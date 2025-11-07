@@ -1,8 +1,11 @@
+// ==================== RIDES.JAVA ====================
 package escuelaing.rides;
 
-import java.util.ArrayList;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
-
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -11,140 +14,105 @@ import com.google.gson.Gson;
 
 public class Rides implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    // Ride class representing a ride in the system
-    private class Ride{
-        private String id;
-        private String origin;
-        private String end;
-        private String driver;
-        private String user;
-        private String status;
-
-        public Ride(String origin, String end, String driver, String user){
-            this.id = java.util.UUID.randomUUID().toString();
-            this.origin = origin;
-            this.end = end;
-            this.driver = driver;
-            this.user = user;
-            this.status = "pending";
-        }
-
-        public String getId() {
-            return id;
-        }
-        public void setId(String id) {
-            this.id = id;
-        }
-        public String getOrigin() {
-            return origin;
-        }
-        public void setOrigin(String origin) {
-            this.origin = origin;
-        }
-        public String getEnd() {
-            return end;
-        }
-        public void setEnd(String end) {
-            this.end = end;
-        }
-        public String getDriver() {
-            return driver;
-        }
-        public void setDriver(String driver) {
-            this.driver = driver;
-        }
-        public String getUser() {
-            return user;
-        }
-        public void setUser(String user) {
-            this.user = user;
-        }
-        public String getStatus() {
-            return status;
-        }
-        public void setStatus(String status) {
-            this.status = status;
-        }
-    }
-
-    ArrayList<Ride> rides = new ArrayList<>();
-    private Gson gson = new Gson();
+    private static final String PERSISTENCE_API_URL = "http://54.196.226.4:8080/api";
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final Gson gson = new Gson();
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input,
-                                                      Context context) {
-
-//        System.out.println("Received input: " + input.getBody());
-//        System.out.println("Http method: " + input.getHttpMethod());
-//        System.out.println("Context: " + context.toString());
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
-        switch (input.getHttpMethod()) {
-            case "POST" -> {
-                addRide(input);
-                responseEvent.setBody("Created ride");
-                responseEvent.setStatusCode(201);
+
+        try {
+            switch (input.getHttpMethod()) {
+                case "POST" -> {
+                    String response = addRide(input);
+                    responseEvent.setBody(response);
+                    responseEvent.setStatusCode(201);
+                }
+                case "PUT" -> {
+                    String response = changeRideStatus(input);
+                    responseEvent.setBody(response);
+                    responseEvent.setStatusCode(200);
+                }
+                case "GET" -> {
+                    String response = getAllRidesIds();
+                    responseEvent.setBody(response);
+                    responseEvent.setStatusCode(200);
+                }
+                default -> {
+                    responseEvent.setBody("Method not allowed");
+                    responseEvent.setStatusCode(405);
+                }
             }
-            case "PUT" -> {
-                String responseBody = changeRideStatus(input);
-                responseEvent.setBody(responseBody);
-                responseEvent.setStatusCode(200);
-                return responseEvent;
-            }
-            case "GET" -> {
-                String responseBody = getAllRidesIds();
-                responseEvent.setBody(responseBody);
-                responseEvent.setStatusCode(200);
-                return responseEvent;
-            }
-            default -> {
-                responseEvent.setBody("Method not allowed");
-                responseEvent.setStatusCode(405);
-                return responseEvent;
-            }
+        } catch (Exception e) {
+            context.getLogger().log("Error: " + e.getMessage());
+            responseEvent.setBody("{\"error\": \"" + e.getMessage() + "\"}");
+            responseEvent.setStatusCode(500);
         }
+
         return responseEvent;
     }
 
+    // Method to add a ride - now calls persistence API
+    public String addRide(APIGatewayProxyRequestEvent input) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(PERSISTENCE_API_URL + "/rides"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(input.getBody()))
+                .build();
 
-    // Method to add a ride
-    public void addRide(APIGatewayProxyRequestEvent input){
-        Ride inputRide = gson.fromJson(input.getBody(), Ride.class);
-        Ride newRide = new Ride(inputRide.getOrigin(), inputRide.getEnd(), inputRide.getDriver(), inputRide.getUser());
-        System.out.println("Adding ride from " + newRide.getOrigin() + " to " + newRide.getEnd() + " for user " + newRide.getUser() + " with driver " + newRide.getDriver());
-        rides.add(newRide);
-        for (Ride ride : rides){
-            System.out.println("Rides in list " + ride.getId());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to create ride: " + response.statusCode());
         }
     }
 
-    // Method to start a ride
-    public String changeRideStatus(APIGatewayProxyRequestEvent input){
+    // Method to change ride status - now calls persistence API
+    public String changeRideStatus(APIGatewayProxyRequestEvent input) throws Exception {
         Map<String, String> rideMap = gson.fromJson(input.getBody(), Map.class);
         Map<String, String> queryParams = input.getQueryStringParameters();
         String rideId = rideMap.get("id");
-        for(Ride ride : rides){
-            if(ride.getId().equals(rideId)){
-                System.out.println("nuevo estado " + ride.getStatus());
-                String newStatus = "in progress";
-                String  message = "Ride " + rideId + " started";
-                if (queryParams.get("status").equals("end")) {
-                    newStatus = "completed";
-                    message = "Ride " + rideId + " completed";
-                }
-                ride.setStatus(newStatus);
-                System.out.println("nuevo estado " + ride.getStatus());
-                return message;
-            }
+
+        // Determinar el nuevo status
+        String newStatus = "in progress";
+        if (queryParams != null && queryParams.get("status") != null && queryParams.get("status").equals("end")) {
+            newStatus = "completed";
         }
-        return "Ride not found";
+
+        // Crear el body para la petición
+        String requestBody = gson.toJson(Map.of("status", newStatus));
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(PERSISTENCE_API_URL + "/rides/" + rideId + "/status"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to update ride status: " + response.statusCode());
+        }
     }
 
-    // Method to get all rides
-    public String getAllRidesIds(){
-        ArrayList<String> ids = new ArrayList<>();
-        for (Ride ride : rides){
-            ids.add(ride.getId());
+    // Method to get all ride IDs - now calls persistence API
+    public String getAllRidesIds() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(PERSISTENCE_API_URL + "/rides/ids"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to get rides: " + response.statusCode());
         }
-        return ids.toString();
     }
 }

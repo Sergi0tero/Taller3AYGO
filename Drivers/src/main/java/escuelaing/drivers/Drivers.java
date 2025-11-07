@@ -1,6 +1,9 @@
 package escuelaing.drivers;
 
-import java.util.ArrayList;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -8,79 +11,67 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.google.gson.Gson;
 
 public class Drivers implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-    // Driver class representing a driver in the system
-    private static class Driver{
-        private String id;
-        private String name;
-        private boolean busy;
 
-        public Driver(String name){
-            this.id = java.util.UUID.randomUUID().toString();
-            this.name = name;
-            this.busy = false;
-        }
-
-        public String getId() {
-            return id;
-        }
-        public void setId(String id) {
-            this.id = id;
-        }
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public boolean isBusy() {
-            return busy;
-        }
-        public void setBusy(boolean busy) {
-            this.busy = busy;
-        }
-    }
-
-    ArrayList<Driver> drivers = new ArrayList<>();
+    private static final String PERSISTENCE_API_URL = "http://54.196.226.4:8080/api";
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final Gson gson = new Gson();
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input,
-                                                      Context context) {
-
-//        System.out.println("Received input: " + input.getBody());
-//        System.out.println("Http method: " + input.getHttpMethod());
-//        System.out.println("Context: " + context.toString());
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
-        if(input.getHttpMethod().equals("POST")){
-            addDriver(input);
-            responseEvent.setBody("Created driver");
-            responseEvent.setStatusCode(201);
-        } else if (input.getHttpMethod().equals("GET")) {
-            String responseBody = getAllDrivers();
-            responseEvent.setBody(responseBody);
-            responseEvent.setStatusCode(200);
-            return responseEvent;
-        } else {
-            responseEvent.setBody("Method not allowed");
-            responseEvent.setStatusCode(405);
-            return responseEvent;
+
+        try {
+            if (input.getHttpMethod().equals("POST")) {
+                String response = addDriver(input);
+                responseEvent.setBody(response);
+                responseEvent.setStatusCode(201);
+            } else if (input.getHttpMethod().equals("GET")) {
+                String response = getAllDrivers();
+                responseEvent.setBody(response);
+                responseEvent.setStatusCode(200);
+            } else {
+                responseEvent.setBody("Method not allowed");
+                responseEvent.setStatusCode(405);
+            }
+        } catch (Exception e) {
+            context.getLogger().log("Error: " + e.getMessage());
+            responseEvent.setBody("{\"error\": \"" + e.getMessage() + "\"}");
+            responseEvent.setStatusCode(500);
         }
+
         return responseEvent;
     }
 
-    private Gson gson = new Gson();
+    // Method to add a driver - now calls persistence API
+    public String addDriver(APIGatewayProxyRequestEvent input) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(PERSISTENCE_API_URL + "/drivers"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(input.getBody()))
+                .build();
 
-    // Method to add a driver
-    public void addDriver(APIGatewayProxyRequestEvent input){
-        Driver newDriver = gson.fromJson(input.getBody(), Driver.class);
-        System.out.println("Adding driver: " + newDriver.getName());
-        drivers.add(new Driver(newDriver.getName()));
-        for (Driver d : drivers) {
-            System.out.println("Driver in list: " + d.getName());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to create driver: " + response.statusCode());
         }
     }
 
-    // Method to get all drivers
-    public String getAllDrivers(){
-        return drivers.toString();
+    // Method to get all drivers - now calls persistence API
+    public String getAllDrivers() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(PERSISTENCE_API_URL + "/drivers"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to get drivers: " + response.statusCode());
+        }
     }
 }
