@@ -22,8 +22,6 @@ La arquitectura general se compone de los siguientes elementos:
 **[Diagrama de clases (Mermaid)](https://mermaid.live/edit#pako:eNrdWNtu2zgQ_RWCQIF4awfxLU70UKBJjNZA2jXs9KUwUNAiKwuVSC9JZeMN4m9f3qRKlug4RoAC0YMkz8yZGR4Oh5QfYcgwgQEMEyTETYwijtIFBeoyEvBNEA4erURfnbnkMY1AjOsyilJSlyKMORHit-J9ROQEn7SANSgphFFYcQvcs3IQjfqqAnhwRuVHfrRJeMC5to5_so8yIzc8vj-akyVjCUEULDOx-YOMxOJKJaCALp8q0uic5hkyZjEmh1LBeBzFtC4ntMEYG5br8kw0SYVEMnuVEvvbJOlBOqUfPaa-oFrjx9ma8kCd0o_Wa9SDNSo_cm5482Cd8qBFMUWblFB5aClwVTYT3Dy7FTlm2TIhAKUso_L5ec_la5vOFyJXrCGM5IgKFMqY0RskyWvUzcyMyIN0yv0z6EU75Z7mZthRaMvWTm-zSqt6vRrI0dMy0x4nVRu_r7vqtHi87VodVp-Ei1hIQkNyzajkLEl2evgXtN5aV21N-NbUomg2sCty65qUx0hP-tZUusfA0bLNq9VjNqGSRDqadnXLQqRHXqn5cEVwlhA8fiBhJhmfE34fhwQIpyg1zPchJ4o00xb0rWU2-J1yShIt1CVxqzjbGjrq9Xq1KRXljhcbxTUu-2i5jbMWy4qLaI7bpv5YiVjzlq1xEVPvYJXSbQPFaAPIJqqn6kTfWmZDq6WohUWCZl7ri7-S3I4Xm5oWNiWlbnV3-UQXLitWHdX4uLFTqyH8pQx8y8oO0JXaiXu28n5dG6mTF4PNa7Rx0VeG3Ogxd3e1MRTnts-7VojK1uVDWGadYi-5DU3BVPktSpcYNW1c0_FsPpnfjb9ej398nE5-fJvdlow-S7m-TmK96a2K15L-k2AUROpWynaFKE7IjPyTESFPlM9PKvl_0WbK2cPGicf3yk8b6C5FHtRM1azEWi1_YsxKrtUp2xC2x2lDO62u9rLae_B9Q4S5_nQMZb-b1jOkmdbxdigzy_hlhIUqo6jc_I7h29A4wQcQnjeQN8J5tX8fQ12ppTdZNPXyPXa7rXy_aaWH10z3Ne-DR6pKwL68ewdmJEGh2jSJUB-VkhN9jzEqTmDma3UBuwsIOp0P7s38wxEAbiPkp4NGU_fpHwBVaHFECQaSWfP8-2cXYdwE-oQnwE_G9xu7TFKVMFhuyqVdHVuoKpAk-qEPsggXfhsPueUof5WjUBTlxByGLIZ_BNYRcQQyZ2sH3ESMW_MKqsrHGpT3-NPTD56YAfh8dzcFIUoS57662b0EWe74L8HtNK7DoLANI_VdAAPJM9KGKeEp0j-h6XsLKFckJQsYqFeM-K8FXNAnhVkj-p2xNIdxlkUrGPxEiVC_3EHa_hdYSDmhmPBr_TEJg25_aJzA4BE-wKAzGJ72zy76o4v-5aB7OTgbteFGibvd07N-f3B5rq7esHd-OXxqw_9MYKXpnXVHo96gdzEaDPuD86f_ATGGc1M)**
 
 
-
-
 ---
 
 ## ⚙️ Configuración y uso
@@ -77,16 +75,11 @@ java -cp "target/classes;target/dependency/*" com.taller.virtualizacionydocker.V
 
 ## 🧩 Conclusión
 
-Este laboratorio demuestra el flujo completo desde el desarrollo de una aplicación básica en Spring Boot hasta su despliegue en la nube utilizando Docker y AWS EC2.
+Este laboratorio demuestra la creacion de una version muy basica de una aplicacion tipo Uber. Haciendo uso de una arquitectura de microservicios implementada con los servicios brindados por AWS:
+- Api Gateway
+- Lambda
+- EC2
 
-El proceso incluye:
-- Compilación y ejecución local.  
-- Dockerización del proyecto.  
-- Ejecución múltiple en contenedores.  
-- Publicación en DockerHub.  
-- Despliegue remoto en AWS con acceso público.  
-
----
 
 **Autor:** Sergio Andrés Otero Herrera  
-**Repositorio DockerHub:** [seanot26/firstspringapp](https://hub.docker.com/r/seanot26/firstspringapp)
+**Repositorio DockerHub:** [seanot26/persistence](https://hub.docker.com/repository/docker/seanot26/persistence/general)
