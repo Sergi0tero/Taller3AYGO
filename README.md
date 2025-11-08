@@ -64,15 +64,6 @@ Comando para hacer compilar cada una de las aplicaciones maven creadas (lambda y
 mvn clean package
 ```
 
-### 2. Ejecutar la aplicación localmente
-
-El siguiente comando ejecuta la aplicación directamente con Java, usando el classpath generado por Maven:
-
-```bash
-java -cp "target/classes;target/dependency/*" com.taller.virtualizacionydocker.VirtualizacionydockerApplication
-```
-
-
 ## 🧩 Conclusión
 
 Este laboratorio demuestra la creacion de una version muy basica de una aplicacion tipo Uber. Haciendo uso de una arquitectura de microservicios implementada con los servicios brindados por AWS:
